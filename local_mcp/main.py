@@ -61,7 +61,7 @@ async def handle_list_tools() -> list[Tool]:
             }
         ),
         Tool(
-            name="list_project_dirs_local",
+            name="list_project_dirs",
             description=(
                 "列出用户本地的项目列表，按绝对路径逐行返回。"
             ),
@@ -217,7 +217,7 @@ def extract_package_name(class_name: str) -> str:
     return ""
 
 
-def list_project_dirs_local() -> str:
+def list_project_dirs() -> str:
     try:
         base_path = (SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH
         entries = os.listdir(base_path)
@@ -245,9 +245,9 @@ async def handle_call_tool(name: str, arguments: dict) -> list:
         except Exception as e:
             return [{"type": "text", "text": f"错误: {str(e)}"}]
 
-    if name == "list_project_dirs_local":
+    if name == "list_project_dirs":
         try:
-            result_text = list_project_dirs_local()
+            result_text = list_project_dirs()
             return [{"type": "text", "text": result_text}]
         except Exception as e:
             return [{"type": "text", "text": f"错误: {str(e)}"}]
