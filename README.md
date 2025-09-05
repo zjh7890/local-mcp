@@ -5,20 +5,27 @@
 ## 提供的工具
 
 ### 1. get_class_source_code
-根据全限定类名查找 Java 源码并返回文本内容（可选以代码块包裹）。支持同时查询多个类（逗号分隔）。
+根据全限定类名查找 Java 源码并返回文本内容。支持同时查询多个类（逗号分隔）。
 
 **参数：**
 - `class_names`：多个全限定类名，使用逗号分隔（必填）
-- `workspace`：覆盖搜索根目录（可选，默认读取环境变量 `WORKSPACE`，否则使用内置默认路径）
-- `code_fence`：是否以 ```java 代码块包裹输出（可选，默认 `true`）
 
 **使用示例：**
 ```json
 {
-  "class_names": "com.example.demo.App, com.foo.bar.UserService",
-  "workspace": "/Users/zjh/IdeaProjects",
-  "code_fence": true
+  "class_names": "com.example.demo.App, com.foo.bar.UserService"
 }
+```
+
+### 2. list_project_dirs_local
+列出当前工作空间（环境变量 `WORKSPACE` 或默认路径）下的一级目录。
+
+**参数：** 无
+
+**返回格式（示例）：**
+```
+/Users/zjh/IdeaProjects/demo1
+/Users/zjh/IdeaProjects/demo2
 ```
 
 ## 快速使用
@@ -28,9 +35,6 @@
 ```bash
 # 使用默认工作空间（内置默认或环境变量 WORKSPACE）
 uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
-
-# 指定工作空间
-uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server --workspace "/Users/zjh/IdeaProjects"
 ```
 
 ## Claude Desktop 配置
@@ -47,9 +51,7 @@ uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
         "run",
         "--from",
         "git+https://github.com/zjh7890/local-mcp.git",
-        "local-mcp-server",
-        "--workspace",
-        "/Users/zjh/IdeaProjects"
+        "local-mcp-server"
       ]
     }
   }
@@ -59,7 +61,7 @@ uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
 ## 说明
 
 - 默认搜索路径：`/Users/zjh/IdeaProjects`
-- 可通过 `--workspace` 或环境变量 `WORKSPACE` 覆盖
+- 可通过环境变量 `WORKSPACE` 覆盖
 - 使用系统 `find` 命令检索源码文件（macOS/Linux 可用）
 
 ## 许可证

@@ -48,7 +48,7 @@ async def handle_list_tools() -> list[Tool]:
             name="get_class_source_code",
             description=(
                 "根据全限定类名在本地目录获取类的源码信息。"
-                "支持多个类名，用逗号分隔；可通过 workspace 覆盖搜索根目录。"
+                "支持多个类名，用逗号分隔。"
             ),
             inputSchema={
                 "type": "object",
@@ -56,17 +56,20 @@ async def handle_list_tools() -> list[Tool]:
                     "class_names": {
                         "type": "string",
                         "description": "多个全限定类名，逗号分隔"
-                    },
-                    "workspace": {
-                        "type": "string",
-                        "description": "覆盖搜索根目录（可选）"
-                    },
-                    "code_fence": {
-                        "type": "boolean",
-                        "description": "是否用 ```java 代码块包裹输出（默认 true）"
                     }
                 },
                 "required": ["class_names"]
+            }
+        ),
+        Tool(
+            name="list_project_dirs_local",
+            description=(
+                "列出当前工作空间下的一级目录，按绝对路径逐行返回。"
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
             }
         ),
     ]
@@ -74,11 +77,11 @@ async def handle_list_tools() -> list[Tool]:
 
 # -------------------- 业务实现（与 greeting-mcp 对齐） --------------------
 
-def get_class_source_code_local(class_names: str, search_base: Optional[str] = None, code_fence: bool = True) -> str:
+def get_class_source_code_local(class_names: str) -> str:
     if not class_names or not class_names.strip():
         return "错误：类名不能为空"
 
-    base_path = (search_base or SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH
+    base_path = (SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH
 
     class_name_list = [name.strip() for name in class_names.split(",") if name.strip()]
 
@@ -88,10 +91,7 @@ def get_class_source_code_local(class_names: str, search_base: Optional[str] = N
         if source_code == "Not Found":
             results.append(f"{class_name}:\nNot Found")
         else:
-            if code_fence:
-                results.append(f"{class_name}:\n```java\n{source_code}\n```")
-            else:
-                results.append(f"{class_name}:\n{source_code}")
+            results.append(f"{class_name}:\n{source_code}")
 
     return "\n\n".join(results)
 
@@ -218,6 +218,21 @@ def extract_package_name(class_name: str) -> str:
     return ""
 
 
+def list_project_dirs_local() -> str:
+    try:
+        base_path = (SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH
+        entries = os.listdir(base_path)
+        dir_paths: list[str] = []
+        for name in sorted(entries):
+            full_path = os.path.join(base_path, name)
+            if os.path.isdir(full_path):
+                dir_paths.append(full_path)
+        return "\n".join(dir_paths)
+    except Exception as e:
+        log_to_stderr(f"列出工作空间目录时发生错误: {e}")
+        return ""
+
+
 # -------------------- 工具调用处理 --------------------
 
 
@@ -226,10 +241,14 @@ async def handle_call_tool(name: str, arguments: dict) -> list:
     if name == "get_class_source_code":
         try:
             class_names = arguments["class_names"]
-            workspace = arguments.get("workspace")
-            code_fence = arguments.get("code_fence", True)
+            result_text = get_class_source_code_local(class_names)
+            return [{"type": "text", "text": result_text}]
+        except Exception as e:
+            return [{"type": "text", "text": f"错误: {str(e)}"}]
 
-            result_text = get_class_source_code_local(class_names, workspace, code_fence)
+    if name == "list_project_dirs_local":
+        try:
+            result_text = list_project_dirs_local()
             return [{"type": "text", "text": result_text}]
         except Exception as e:
             return [{"type": "text", "text": f"错误: {str(e)}"}]
@@ -240,13 +259,10 @@ async def handle_call_tool(name: str, arguments: dict) -> list:
 # -------------------- 启动/CLI --------------------
 
 
-def set_workspace_from_cli_and_env(workspace_cli: Optional[str]) -> None:
+def set_workspace_from_cli_and_env() -> None:
     global SEARCH_BASE_PATH
     workspace_env = os.getenv("WORKSPACE")
-    SEARCH_BASE_PATH = (
-        (workspace_cli or workspace_env or DEFAULT_SEARCH_BASE_PATH).strip()
-        or DEFAULT_SEARCH_BASE_PATH
-    )
+    SEARCH_BASE_PATH = ((workspace_env or DEFAULT_SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH)
     log_to_stderr(f"工作空间已设置: {SEARCH_BASE_PATH}")
 
 
@@ -261,17 +277,10 @@ async def main_async() -> None:
 
 def cli_main() -> None:
     parser = argparse.ArgumentParser(description="local-mcp 服务器")
-    parser.add_argument(
-        "--workspace",
-        type=str,
-        default=None,
-        help="搜索根目录，默认使用环境变量 WORKSPACE 或 /Users/zjh/IdeaProjects",
-    )
-
-    args = parser.parse_args()
+    parser.parse_args()
 
     try:
-        set_workspace_from_cli_and_env(args.workspace)
+        set_workspace_from_cli_and_env()
         asyncio.run(main_async())
     except KeyboardInterrupt:
         log_to_stderr("服务器已停止")
