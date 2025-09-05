@@ -47,8 +47,7 @@ async def handle_list_tools() -> list[Tool]:
         Tool(
             name="get_class_source_code",
             description=(
-                "根据全限定类名在本地目录获取类的源码信息。"
-                "支持多个类名，用逗号分隔。"
+                "根据全限定类名在用户本地目录获取类的源码信息。支持同时查询多个类名，用逗号分隔。"
             ),
             inputSchema={
                 "type": "object",
@@ -64,7 +63,7 @@ async def handle_list_tools() -> list[Tool]:
         Tool(
             name="list_project_dirs_local",
             description=(
-                "列出当前工作空间下的一级目录，按绝对路径逐行返回。"
+                "列出用户本地的项目列表，按绝对路径逐行返回。"
             ),
             inputSchema={
                 "type": "object",
