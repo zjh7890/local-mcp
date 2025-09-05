@@ -86,11 +86,25 @@ def get_class_source_code_local(class_names: str) -> str:
 
     results: list[str] = []
     for class_name in class_name_list:
-        source_code = get_class_source_code_string(class_name, base_path)
-        if source_code == "Not Found":
+        try:
+            java_file_path = find_java_file(class_name, base_path)
+            if not java_file_path:
+                results.append(f"{class_name}:\nNot Found")
+                continue
+
+            content = read_file_content(java_file_path)
+            if not content:
+                results.append(f"{class_name}:\nNot Found")
+                continue
+
+            if not validate_package_match(content, class_name):
+                results.append(f"{class_name}:\nNot Found")
+                continue
+
+            results.append(f"{java_file_path}\n```\n{content}\n```")
+        except Exception as e:
+            log_to_stderr(f"获取类源码时发生错误: {e}")
             results.append(f"{class_name}:\nNot Found")
-        else:
-            results.append(f"{class_name}:\n{source_code}")
 
     return "\n\n".join(results)
 
