@@ -63,7 +63,7 @@ async def handle_list_tools() -> list[Tool]:
         Tool(
             name="list_project_dirs",
             description=(
-                "列出用户本地的项目列表，按绝对路径逐行返回。"
+                "获取用户本地存放项目的根目录及并列出项目列表，按绝对路径逐行返回。"
             ),
             inputSchema={
                 "type": "object",
@@ -240,7 +240,14 @@ def list_project_dirs() -> str:
             full_path = os.path.join(base_path, name)
             if os.path.isdir(full_path):
                 dir_paths.append(full_path)
-        return "\n".join(dir_paths)
+
+        lines: list[str] = []
+        lines.append("用户项目根目录地址：")
+        lines.append(base_path)
+        lines.append("项目列表：")
+        lines.extend(dir_paths)
+
+        return "\n".join(lines)
     except Exception as e:
         log_to_stderr(f"列出工作空间目录时发生错误: {e}")
         return ""
