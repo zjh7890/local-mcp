@@ -17,8 +17,8 @@
 }
 ```
 
-### 2. list_project_dirs_local
-列出当前工作空间（环境变量 `WORKSPACE` 或默认路径）下的一级目录。
+### 2. list_project_dirs
+列出当前工作空间（由 `--workspace` 指定）下的一级目录。
 
 **参数：** 无
 
@@ -33,8 +33,7 @@
 直接从远程仓库运行：
 
 ```bash
-# 使用默认工作空间（内置默认或环境变量 WORKSPACE）
-uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
+uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server -- --workspace "/绝对路径/到/你的/项目根目录"
 ```
 
 ## Claude Desktop 配置
@@ -51,7 +50,10 @@ uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
         "run",
         "--from",
         "git+https://github.com/zjh7890/local-mcp.git",
-        "local-mcp-server"
+        "local-mcp-server",
+        "--",
+        "--workspace",
+        "/Users/zjh/IdeaProjects"
       ]
     }
   }
@@ -60,8 +62,7 @@ uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
 
 ## 说明
 
-- 默认搜索路径：`/Users/zjh/IdeaProjects`
-- 可通过环境变量 `WORKSPACE` 覆盖
+- 需要通过 CLI 参数 `--workspace` 显式指定工作空间根目录
 - 使用系统 `find` 命令检索源码文件（macOS/Linux 可用）
 
 ## 许可证

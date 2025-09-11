@@ -24,8 +24,7 @@ from mcp.types import Tool
 
 # -------------------- 全局配置 --------------------
 
-DEFAULT_SEARCH_BASE_PATH = "/Users/zjh/IdeaProjects"
-SEARCH_BASE_PATH: str = DEFAULT_SEARCH_BASE_PATH
+SEARCH_BASE_PATH: str = ""
 
 
 def log_to_stderr(message: str) -> None:
@@ -80,7 +79,9 @@ def get_class_source_code_local(class_names: str) -> str:
     if not class_names or not class_names.strip():
         return "错误：类名不能为空"
 
-    base_path = (SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH
+    base_path = (SEARCH_BASE_PATH).strip()
+    if not base_path:
+        return "错误：未设置工作空间路径，请通过 --workspace 指定"
 
     class_name_list = [name.strip() for name in class_names.split(",") if name.strip()]
 
@@ -233,7 +234,9 @@ def extract_package_name(class_name: str) -> str:
 
 def list_project_dirs() -> str:
     try:
-        base_path = (SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH
+        base_path = (SEARCH_BASE_PATH).strip()
+        if not base_path:
+            return "错误：未设置工作空间路径，请通过 --workspace 指定"
         entries = os.listdir(base_path)
         dir_paths: list[str] = []
         for name in sorted(entries):
@@ -279,10 +282,13 @@ async def handle_call_tool(name: str, arguments: dict) -> list:
 # -------------------- 启动/CLI --------------------
 
 
-def set_workspace_from_cli_and_env() -> None:
+def set_workspace_from_cli(workspace: str) -> None:
     global SEARCH_BASE_PATH
-    workspace_env = os.getenv("WORKSPACE")
-    SEARCH_BASE_PATH = ((workspace_env or DEFAULT_SEARCH_BASE_PATH).strip() or DEFAULT_SEARCH_BASE_PATH)
+    SEARCH_BASE_PATH = (workspace or "").strip()
+    if not SEARCH_BASE_PATH:
+        raise ValueError("工作空间路径未提供。请使用 --workspace 指定用户项目根目录。")
+    if not os.path.isdir(SEARCH_BASE_PATH):
+        raise ValueError(f"工作空间路径无效或不存在: {SEARCH_BASE_PATH}")
     log_to_stderr(f"工作空间已设置: {SEARCH_BASE_PATH}")
 
 
@@ -297,10 +303,11 @@ async def main_async() -> None:
 
 def cli_main() -> None:
     parser = argparse.ArgumentParser(description="local-mcp 服务器")
-    parser.parse_args()
+    parser.add_argument("--workspace", required=True, help="用户项目根目录（必填）")
+    args = parser.parse_args()
 
     try:
-        set_workspace_from_cli_and_env()
+        set_workspace_from_cli(args.workspace)
         asyncio.run(main_async())
     except KeyboardInterrupt:
         log_to_stderr("服务器已停止")
