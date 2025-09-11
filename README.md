@@ -33,7 +33,7 @@
 直接从远程仓库运行：
 
 ```bash
-uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server -- --workspace "/绝对路径/到/你的/项目根目录"
+uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server --workspace "/Users/zjh/IdeaProjects" 
 ```
 
 ## Claude Desktop 配置
