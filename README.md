@@ -51,7 +51,6 @@ uv tool run --from git+https://github.com/zjh7890/local-mcp.git local-mcp-server
         "--from",
         "git+https://github.com/zjh7890/local-mcp.git",
         "local-mcp-server",
-        "--",
         "--workspace",
         "/Users/zjh/IdeaProjects"
       ]
