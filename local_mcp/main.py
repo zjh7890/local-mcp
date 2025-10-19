@@ -25,6 +25,18 @@ from mcp.types import Tool
 # -------------------- 全局配置 --------------------
 
 SEARCH_BASE_PATH: str = ""
+IGNORED_DIR_NAMES: set[str] = {
+    ".git",
+    "target",
+    ".idea",
+    ".vscode",
+    "node_modules",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+}
 
 
 def log_to_stderr(message: str) -> None:
@@ -237,23 +249,46 @@ def list_project_dirs() -> str:
         base_path = (SEARCH_BASE_PATH).strip()
         if not base_path:
             return "错误：未设置工作空间路径，请通过 --workspace 指定"
-        entries = os.listdir(base_path)
-        dir_paths: list[str] = []
-        for name in sorted(entries):
-            full_path = os.path.join(base_path, name)
-            if os.path.isdir(full_path):
-                dir_paths.append(full_path)
+
+        project_dirs = find_maven_project_dirs(base_path)
 
         lines: list[str] = []
         lines.append("用户项目根目录地址：")
         lines.append(base_path)
         lines.append("项目列表：")
-        lines.extend(dir_paths)
+        lines.extend(project_dirs)
 
         return "\n".join(lines)
     except Exception as e:
         log_to_stderr(f"列出工作空间目录时发生错误: {e}")
         return ""
+
+
+def find_maven_project_dirs(base_path: str) -> list[str]:
+    """递归扫描 base_path，命中含 pom.xml 的目录即视为项目根且不再下探。
+
+    忽略常见的大型或无关目录以提升性能。
+    """
+    try:
+        if not os.path.isdir(base_path):
+            return []
+
+        found: set[str] = set()
+
+        for dirpath, dirnames, filenames in os.walk(base_path):
+            # 过滤忽略目录（原地修改以影响后续遍历）
+            dirnames[:] = [d for d in dirnames if d not in IGNORED_DIR_NAMES]
+
+            # 命中 pom.xml：记录该目录为项目并停止下探
+            if "pom.xml" in filenames:
+                found.add(dirpath)
+                dirnames[:] = []  # 命中即止
+                continue
+
+        return sorted(found)
+    except Exception as e:
+        log_to_stderr(f"递归查找 Maven 项目时发生错误: {e}")
+        return []
 
 
 # -------------------- 工具调用处理 --------------------
